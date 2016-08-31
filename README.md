@@ -8,8 +8,8 @@ Rules followed:
 3. If the number is present, it's priority is increased by one.
 4. The queue must have a remove method which does not take any arguments, and removes and returns the number with the highest priority.
 5. The insert and remove functions should run in O(lg n)
-6. You can assume that all inputs are safe.
-7. Please don't pull in any external libraries.
+6. Assume that all inputs are safe.
+7. Don't pull in any external libraries.
 
 **TODO**: Add documentation and lintify it.
 
