@@ -1,0 +1,210 @@
+/**
+ * @priority-queue.js
+ * Sample implementation of a priority queue using a binary heap.
+ *
+ * Rules followed:
+ *
+ * 1. The queue must have an insert method which takes a number.
+ *      a. If the number is not already present in the queue, it is added to the queue with a priority equal to the number.
+ *      b. If the number is present, it's priority is increased by one.
+ * 2. The queue must have a remove method which does not take any arguments, and removes and returns the number with the highest priority.
+ * 3. The insert and remove functions should run in O(lg n)
+ * 4. You can assume that all inputs are safe.
+ * 5. Please don't pull in any external libraries.
+ *
+ * TODO: Add documentation and lintify it.
+ *
+ * Created by Aaron C. Schafer on 8/30/2016.
+ */
+var Pq = (function() {
+    var _heapItem = function(number) {
+        this.number = this.priority = number;
+    };
+
+    var _binaryHeap = function () {
+        this.array = [];
+        this.indexes = [];
+    };
+
+    _binaryHeap.prototype.isNumeric = function (number) {
+        return !isNaN(parseFloat(number)) && isFinite(number);
+    };
+
+    _binaryHeap.prototype.size = function() {
+        return this.array.length;
+    };
+
+    _binaryHeap.prototype.getParentIndex = function (childIndex) {
+        return ((childIndex + 1) >> 1) - 1; // same as Math.floor((childIndex + 1) / 2) - 1
+    };
+
+    _binaryHeap.prototype.getRightChildIndex = function (index) {
+        return (index + 1) << 1; // same as (index + 1) * 2
+    };
+
+    _binaryHeap.prototype.getLeftChildIndex = function (rightIndex) {
+        return rightIndex - 1;
+    };
+
+    _binaryHeap.prototype.add = function(number) {
+        //  if item exists, increase priority (lower = higher)
+        var index = this.indexes[number];
+
+        if (this.isNumeric(index)) {
+            this.array[index].priority -= 1;
+            this.bubbleUpItem(index);
+            return;
+        }
+
+        // add item to heap
+        var heapItem = new _heapItem(number);
+
+        this.array.push(heapItem);
+        this.bubbleUpItem(this.array.length - 1);
+    };
+
+    _binaryHeap.prototype.remove = function() {
+        if (this.array.length === 0) {
+            return null;
+        }
+
+        // Grab the item so we can return the highest priority number
+        var removedItem = this.array[0];
+        var removedNumber = removedItem.number;
+
+        // overwrite top item with last item and let it sink to correct position
+        var lastItem = this.array.pop();
+        delete this.indexes[removedNumber];
+
+        // sink item if needed
+        if (this.size() > 0) {
+            this.array[0] = lastItem;
+            this.indexes[lastItem.number] = 0;
+            this.sinkItem();
+        }
+
+        // uncomment the line below to see the number and priority associated to each
+        // return removedItem;
+        return removedNumber;
+    };
+
+    _binaryHeap.prototype.bubbleUpItem = function(currentIndex) {
+        if (!this.isNumeric(currentIndex) || currentIndex < 0 || currentIndex > this.array.length - 1) {
+            return;
+        }
+
+        var currentItem = this.array[currentIndex],
+            parentIndex,
+            parentItem;
+
+        // starting index for current item if it doesn't already have one
+        if (!this.isNumeric(this.indexes[currentItem.number])) {
+            this.indexes[currentItem.number] = currentIndex;
+        }
+
+        // bubble item up until it is at correct position
+        while (currentIndex > 0) {
+            parentIndex = this.getParentIndex(currentIndex);
+            parentItem = this.array[parentIndex];
+
+            if (currentItem.priority >= parentItem.priority) {
+                break;
+            }
+
+            // swap with parent
+            this.indexes[parentItem.number] = currentIndex;
+            this.array[parentIndex] = currentItem;
+            this.array[currentIndex] = parentItem;
+            this.indexes[currentItem.number] = currentIndex = parentIndex;
+        }
+    };
+
+    _binaryHeap.prototype.sinkItem = function() {
+        var currentIndex = 0,
+            currentItem = this.array[currentIndex],
+            currentPriority = currentItem.priority,
+            rightChildIndex,
+            leftChildIndex,
+            swapIndex,
+            childNumber,
+            leftChildItem,
+            leftChildPriority,
+            rightChildItem,
+            rightChildPriority;
+
+        while (true) {
+            rightChildIndex = this.getRightChildIndex(currentIndex);
+            leftChildIndex = this.getLeftChildIndex(rightChildIndex);
+            swapIndex = null;
+            childNumber = null;
+
+
+            if (leftChildIndex < this.size()) {
+                leftChildItem = this.array[leftChildIndex];
+                leftChildPriority = leftChildItem.priority;
+
+                if (leftChildPriority < currentPriority) {
+                    swapIndex = leftChildIndex;
+                    childNumber = leftChildItem.number;
+                }
+            }
+
+            if (rightChildIndex < this.size()) {
+                rightChildItem = this.array[rightChildIndex];
+                rightChildPriority = rightChildItem.priority;
+
+                if (rightChildPriority < (!swapIndex ? currentPriority : leftChildPriority)) {
+                    swapIndex = rightChildIndex;
+                    childNumber = rightChildItem.number;
+                }
+            }
+
+            // if no swap was made, item is in the right place
+            if (!swapIndex) {
+                break;
+            }
+
+            // moving on
+            this.indexes[childNumber] = currentIndex;
+            this.array[currentIndex] = this.array[swapIndex];
+            this.array[swapIndex] = currentItem;
+            this.indexes[currentItem.number] = currentIndex = swapIndex;
+        }
+    };
+
+    return {
+        /**
+         * Called after body loads.
+         *
+         * Tests the implementation of priority queue
+         *
+         * @param {int} arraySize
+         *  The number of randomly generated items to be added to the list
+         * @param {int} ratio
+         *  The ratio percentage to increase the number of duplicated numbers.
+         */
+        test: function(arraySize, ratio) {
+            var binaryHeap = new _binaryHeap(),
+                array = [],
+                i,
+                number;
+
+            for (i = 0 ;i < (arraySize || 32); i += 1) {
+                number = Math.floor(Math.random() * (arraySize || 32) * ((ratio / 100) || 1));
+                array.push(number);
+            }
+
+            for (i = 0; i < array.length; i += 1) {
+                binaryHeap.add(array[i]);
+            }
+
+            console.log("Test results: ");
+
+            while(binaryHeap.size() > 0) {
+                console.log(binaryHeap.remove());
+            }
+
+            console.log(array.sort());
+        }
+    }
+})();
