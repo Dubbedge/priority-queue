@@ -22,8 +22,12 @@ var Pq = (function() {
     };
 
     var _binaryHeap = function () {
+        // list of items added
         this.array = [];
-        this.indexes = [];
+
+        // keep track of the index of each item in the heap for order so we can do an order 1 lookup if a number has
+        // already been added to heap
+        this.indexes = {};
     };
 
     _binaryHeap.prototype.isNumeric = function (number) {
@@ -84,8 +88,8 @@ var Pq = (function() {
         }
 
         // uncomment the line below to see the number and priority associated to each
-        // return removedItem;
-        return removedNumber;
+        return removedItem;
+        //return removedNumber;
     };
 
     _binaryHeap.prototype.bubbleUpItem = function(currentIndex) {
@@ -172,22 +176,138 @@ var Pq = (function() {
         }
     };
 
-    return {
+    var _tests = {
+        test0: function() {
+            var binaryHeap = new _binaryHeap();
+
+            try {
+                var item = binaryHeap.remove();
+                return item === null;
+            } catch (e) {
+                console.log(e);
+                return false;
+            }
+        },
+        test1: function() {
+            var binaryHeap = new _binaryHeap();
+
+            binaryHeap.add(0);
+
+            var item = binaryHeap.remove();
+
+            return item.number === 0 && item.priority === 0;
+        },
+        test2: function() {
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(0); // priority = 0
+            binaryHeap.add(0); // priority = -1
+
+            var item = binaryHeap.remove();
+
+            return 0 === item.number && item.priority === -1
+        },
+        test3: function() {
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(1);
+            binaryHeap.add(0);
+
+            var item = binaryHeap.remove();
+
+            return item.number === 0 && item.priority === 0;
+        },
+        test4: function() {
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(0); // priority 0
+            binaryHeap.add(1); // priority 1
+            binaryHeap.add(1); // priority 0
+            binaryHeap.add(1); // priority -1
+
+            var item = binaryHeap.remove();
+
+            return item.number === 1 && item.priority === -1;
+        },
+        test5: function() {
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(0);
+            binaryHeap.add(1);
+            binaryHeap.remove(); // item 0
+
+            var item = binaryHeap.remove(); // item 1
+
+            return item.number === 1 && item.priority === 1;
+        },
+        test6: function(){
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(1);
+            binaryHeap.add(0);
+            binaryHeap.remove(); // item 0
+
+            var item = binaryHeap.remove(); // item 1
+
+            return item.number === 1 && item.priority === 1;
+        },
+        test7: function(){
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(0);
+            binaryHeap.add(2);
+            binaryHeap.add(1);
+
+            binaryHeap.remove(); // item 0
+
+            var item = binaryHeap.remove(); // item 1
+
+            return item.number === 1 && item.priority === 1;
+        },
+        test8: function(){
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(3); // priority 3
+            binaryHeap.add(2); // priority 2
+            binaryHeap.add(1); // priority 1
+            binaryHeap.add(3); // priority 2
+            binaryHeap.add(3); // priority 1
+            binaryHeap.add(3); // priority 0
+
+            var item = binaryHeap.remove();
+
+            return item.number === 3 && item.priority === 0;
+        },
+        test9: function(){
+            var binaryHeap = new _binaryHeap();
+            binaryHeap.add(3); // priority 3
+            binaryHeap.add(2); // priority 2
+            binaryHeap.add(1); // priority 1
+            binaryHeap.add(3); // priority 2
+            binaryHeap.add(3); // priority 1
+            binaryHeap.add(3); // priority 0
+
+            var item1 = binaryHeap.remove(); // item 3
+            var item2 = binaryHeap.remove(); // item 1
+            var item3 = binaryHeap.remove(); // item 2
+
+            return (
+                item1.number === 3 && item1.priority === 0 &&
+                item2.number === 1 && item2.priority === 1 &&
+                item3.number === 2 && item3.priority === 2
+            );
+        },
         /**
          * Called after body loads.
          *
-         * Tests the implementation of priority queue
+         * Test adding a random list of numbers to a priority queue
          *
-         * @param {int} arraySize
+         * @param {number} arraySize
          *  The number of randomly generated items to be added to the list
-         * @param {int} ratio
+         * @param {number} ratio
          *  The ratio percentage to increase the number of duplicated numbers.
          */
-        test: function(arraySize, ratio) {
+        test10: function(arraySize, ratio) {
             var binaryHeap = new _binaryHeap(),
                 array = [],
+                priorities = {},
+                item,
                 i,
-                number;
+                number,
+                result = true;
 
             for (i = 0 ;i < (arraySize || 32); i += 1) {
                 number = Math.floor(Math.random() * (arraySize || 32) * ((ratio / 100) || 1));
@@ -198,13 +318,36 @@ var Pq = (function() {
                 binaryHeap.add(array[i]);
             }
 
-            console.log("Test results: ");
-
-            while(binaryHeap.size() > 0) {
-                console.log(binaryHeap.remove());
+            for (i = 0; i < array.length; i += 1) {
+                if (!binaryHeap.isNumeric(priorities[array[i]])) {
+                    priorities[array[i]] = array[i];
+                } else {
+                    priorities[array[i]] -= 1;
+                }
             }
 
-            console.log(array.sort());
+            while(binaryHeap.size() > 0) {
+                item = binaryHeap.remove();
+                result = result && item.priority === priorities[item.number];
+            }
+
+            return result;
+        }
+    };
+
+    return {
+        test: function() {
+            console.log("test 0: " + _tests.test0());
+            console.log("test 1: " + _tests.test1());
+            console.log("test 2: " + _tests.test2());
+            console.log("test 3: " + _tests.test3());
+            console.log("test 4: " + _tests.test4());
+            console.log("test 5: " + _tests.test5());
+            console.log("test 6: " + _tests.test6());
+            console.log("test 7: " + _tests.test7());
+            console.log("test 8: " + _tests.test8());
+            console.log("test 9: " + _tests.test9());
+            console.log("test 10: " + _tests.test10(100, 50));
         }
     }
 })();
